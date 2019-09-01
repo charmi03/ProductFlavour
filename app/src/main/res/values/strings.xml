@@ -7,7 +7,7 @@
     <string name="radius">Radius</string>
     <string name="show_map">MapView</string>
     <string name="show_list">ListView</string>
-    <string name="google_maps_api_key">AIzaSyAD7AG8sPbOL4kZ6mWML4aQW98H0DiMtPI</string>
+    <string name="google_maps_api_key"></string>
     <string name="radius_label">Want to update Radius ?? \n (in metre)</string>
 
 </resources>
