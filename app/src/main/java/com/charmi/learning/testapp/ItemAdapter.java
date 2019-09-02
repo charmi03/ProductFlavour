@@ -56,6 +56,11 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
             }
 
             if(mItems.get(position).getPhotoUrl() != null){
+//                String photoreference = mItems.get(position).getPhotos().get(0).getPhotoReference();
+//
+//                String picUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=" +
+//                        photoreference +
+//                        "&key=" + BuildConfig.GOOGLE_PLACE_API_KEY ;
 
                 String photo_uri = mItems.get(position).getPhotoUrl();
 

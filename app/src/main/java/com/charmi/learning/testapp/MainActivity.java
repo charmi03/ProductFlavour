@@ -123,6 +123,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         init();
 
+        mRequestingLocationUpdates = true;
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mSettingsClient = LocationServices.getSettingsClient(this);
+
         createLocationCallback();
         createLocationRequest();
         buildLocationSettingsRequest();
@@ -150,9 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View bottomSheet = findViewById(R.id.bottom_sheet);
         behavior = BottomSheetBehavior.from(bottomSheet);
 
-        mRequestingLocationUpdates = true;
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        mSettingsClient = LocationServices.getSettingsClient(this);
+
     }
 
     protected void loadMap(GoogleMap googleMap) {
@@ -467,7 +469,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                 try {
                                     if (photos.size() > 0) {
-                                        String photoreference = photos.get(i).getPhotoReference();
+                                        String photoreference = photos.get(0).getPhotoReference();
 
                                         String photo_url = base_url + "api/place/photo?maxwidth=400&photoreference=" +
                                                 photoreference +
@@ -496,7 +498,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }
                         } else {
                             behavior.setState(STATE_COLLAPSED);
-                            Toast.makeText(MainActivity.this, "Status: " + response.body().getStatus() + "No result found !!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Status: " + response.body().getStatus(), Toast.LENGTH_SHORT).show();
                         }
 
                         setBottomSheetAdapter(getApplicationContext(), infoList);
@@ -547,7 +549,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (item.getItemId()) {
 
             case R.id.action_radius:
-                showAlert(getApplicationContext());
+                showAlert(MainActivity.this);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -568,44 +570,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void showAlert(Context ctx) {
-        LayoutInflater li = LayoutInflater.from(ctx);
-        View promptsView = li.inflate(R.layout.alert_layout, null);
+        try{
+            LayoutInflater li = LayoutInflater.from(ctx);
+            View promptsView = li.inflate(R.layout.alert_layout, null);
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
-        alertDialogBuilder.setView(promptsView);
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+            alertDialogBuilder.setView(promptsView);
 
-        final EditText userInput = promptsView.findViewById(R.id.et_radius);
+            final EditText userInput = promptsView.findViewById(R.id.et_radius);
 
-        if (getPreferencesRadius("RADIUS") > 0)
-            userInput.setText(String.valueOf(getPreferencesRadius("RADIUS")));
+            if (getPreferencesRadius("RADIUS") > 0)
+                userInput.setText(String.valueOf(getPreferencesRadius("RADIUS")));
 
-        // set dialog message
-        alertDialogBuilder
-                .setCancelable(false)
-                .setPositiveButton("Set",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
+            // set dialog message
+            alertDialogBuilder
+                    .setCancelable(false)
+                    .setPositiveButton("Set",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
 
-                                if (!TextUtils.isEmpty(userInput.getText())) {
-                                    savePreferencesRadius("RADIUS", Integer.parseInt(userInput.getText().toString()));
-                                    PROXIMITY_RADIUS = Integer.parseInt(userInput.getText().toString());
-                                    retrofit_call(getResources().getString(R.string.place_name), PROXIMITY_RADIUS);
+                                    if (!TextUtils.isEmpty(userInput.getText())) {
+                                        savePreferencesRadius("RADIUS", Integer.parseInt(userInput.getText().toString()));
+                                        PROXIMITY_RADIUS = Integer.parseInt(userInput.getText().toString());
+                                        retrofit_call(getResources().getString(R.string.place_name), PROXIMITY_RADIUS);
+                                    }
+
                                 }
+                            })
+                    .setNegativeButton("Cancel",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            });
 
-                            }
-                        })
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.cancel();
-                            }
-                        });
+            // create alert dialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
 
-        // create alert dialog
-        AlertDialog alertDialog = alertDialogBuilder.create();
+            // show it
+            alertDialog.show();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
-        // show it
-        alertDialog.show();
 
     }
 
