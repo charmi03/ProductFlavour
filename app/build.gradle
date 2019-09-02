@@ -5,7 +5,6 @@ android {
     defaultConfig {
         applicationId "com.charmi.learning.testapp"
         manifestPlaceholders = [appTheme: "@style/AppTheme_green", "GOOGLE_PLACE_API_KEY": MyGooglePlaceApiKey]
-//        resValue "string", "GOOGLE_PLACE_API_KEY", MyGooglePlaceApiKey
         minSdkVersion 22
         targetSdkVersion 28
         versionCode 2
