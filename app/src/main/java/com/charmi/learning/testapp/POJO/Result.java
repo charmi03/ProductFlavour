@@ -20,12 +20,12 @@ public class Result {
     @SerializedName("name")
     @Expose
     private String name;
-    @SerializedName("opening_hours")
-    @Expose
-    private OpeningHours openingHours;
+//    @SerializedName("opening_hours")
+//    @Expose
+//    private OpeningHours openingHours;
     @SerializedName("photos")
     @Expose
-    private List<Photo> photos = new ArrayList<Photo>();
+    private List<Photo> photos = new ArrayList<>();
     @SerializedName("place_id")
     @Expose
     private String placeId;
@@ -40,13 +40,23 @@ public class Result {
     private String scope;
     @SerializedName("types")
     @Expose
-    private List<String> types = new ArrayList<String>();
+    private List<String> types = new ArrayList<>();
     @SerializedName("vicinity")
     @Expose
     private String vicinity;
     @SerializedName("price_level")
     @Expose
     private Integer priceLevel;
+
+    private String photoUrl;
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
 
     /**
      *
@@ -120,23 +130,23 @@ public class Result {
         this.name = name;
     }
 
-    /**
-     *
-     * @return
-     * The openingHours
-     */
-    public OpeningHours getOpeningHours() {
-        return openingHours;
-    }
-
-    /**
-     *
-     * @param openingHours
-     * The opening_hours
-     */
-    public void setOpeningHours(OpeningHours openingHours) {
-        this.openingHours = openingHours;
-    }
+//    /**
+//     *
+//     * @return
+//     * The openingHours
+//     */
+//    public OpeningHours getOpeningHours() {
+//        return openingHours;
+//    }
+//
+//    /**
+//     *
+//     * @param openingHours
+//     * The opening_hours
+//     */
+//    public void setOpeningHours(OpeningHours openingHours) {
+//        this.openingHours = openingHours;
+//    }
 
     /**
      *

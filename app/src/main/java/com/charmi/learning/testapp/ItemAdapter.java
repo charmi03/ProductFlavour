@@ -43,7 +43,6 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(final ViewHolder viewHolder, int position) {
-
         try{
             viewHolder.tvPlace.setText(mItems.get(position).getName());
             viewHolder.tvVicinity.setText(mItems.get(position).getVicinity());
@@ -56,16 +55,12 @@ class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                 viewHolder.ratingBar.setVisibility(View.GONE);
             }
 
+            if(mItems.get(position).getPhotoUrl() != null){
 
-            if(mItems.get(position).getPhotos().size() > 0){
-                String photoreference = mItems.get(position).getPhotos().get(0).getPhotoReference();
-
-                String picUrl = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=" +
-                        photoreference +
-                        "&key=" + BuildConfig.GOOGLE_PLACE_API_KEY ;
+                String photo_uri = mItems.get(position).getPhotoUrl();
 
                 Glide.with(context)
-                        .load(picUrl)
+                        .load(photo_uri)
                         .centerCrop()
                         .placeholder(R.mipmap.ic_not_found)
                         .crossFade()
