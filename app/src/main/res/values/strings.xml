@@ -7,8 +7,7 @@
     <string name="radius">Radius</string>
     <string name="show_map">MapView</string>
     <string name="show_list">ListView</string>
-    <string name="google_maps_api_key">AIzaSyB2hihvGI7ZMasdMPzzI8hD2csBFBB-01s</string>
-<!--    <string name="google_maps_api_key">AIzaSyAD7AG8sPbOL4kZ6mWML4aQW98H0DiMtPI</string>-->
+    <string name="google_maps_api_key"></string>
     <string name="radius_label">Update distance for hotel search (metres)</string>
 
 </resources>
