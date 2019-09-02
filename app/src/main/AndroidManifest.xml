@@ -19,9 +19,6 @@
         android:theme="${appTheme}"
         tools:ignore="GoogleAppIndexingWarning">
 
-        <activity android:name=".ListActivity"
-            android:launchMode="singleInstance"></activity>
-
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait">
@@ -34,7 +31,8 @@
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="$(GOOGLE_PLACE_API_KEY)" />
+            android:value="@string/google_maps_api_key"/>
+           <!-- android:value="$(GOOGLE_PLACE_API_KEY)"-->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />

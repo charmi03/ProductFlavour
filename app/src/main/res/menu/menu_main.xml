@@ -9,13 +9,4 @@
         android:title="@string/radius"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/action_map"
-        android:title="@string/show_map"
-        app:showAsAction="always" />
-
-    <item
-        android:id="@+id/action_list"
-        app:showAsAction="always"
-        android:title="@string/show_list"/>
 </menu>

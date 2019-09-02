@@ -16,10 +16,13 @@ import android.net.Uri;
 import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -36,6 +39,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.charmi.learning.testapp.POJO.Example;
+import com.charmi.learning.testapp.POJO.Photo;
 import com.charmi.learning.testapp.POJO.Result;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
@@ -65,14 +69,25 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity {
+import static android.support.design.widget.BottomSheetBehavior.STATE_COLLAPSED;
+import static android.support.design.widget.BottomSheetBehavior.STATE_EXPANDED;
 
+public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemListener{
+
+    BottomSheetBehavior behavior;
+    RecyclerView recyclerView;
+    private ItemAdapter mAdapter;
+    private  TextView tvResult;
+    private ArrayList<Result> infoList;
     public int PROXIMITY_RADIUS = 0;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -112,6 +127,11 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Error - Map Fragment was null!!", Toast.LENGTH_SHORT).show();
         }
 
+        tvResult = findViewById(R.id.tvResult);
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
         mRequestingLocationUpdates = true;
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
@@ -122,6 +142,32 @@ public class MainActivity extends AppCompatActivity {
         createLocationRequest();
         buildLocationSettingsRequest();
 
+        View bottomSheet = findViewById(R.id.bottom_sheet);
+        behavior = BottomSheetBehavior.from(bottomSheet);
+        behavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                // React to state change
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                // React to dragging event
+            }
+        });
+
+        tvResult.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(infoList.size() > 0)
+                    behavior.setState(STATE_EXPANDED);
+                else{
+                    behavior.setState(STATE_COLLAPSED);
+                    Toast.makeText(MainActivity.this, "No result found !!", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
 
 
     }
@@ -177,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
             else
                 PROXIMITY_RADIUS = 1500;
 
-            //retrofit_call(getResources().getString(R.string.place_name), PROXIMITY_RADIUS);
+            retrofit_call(getResources().getString(R.string.place_name), PROXIMITY_RADIUS);
 
             stopLocationUpdates();
 
@@ -393,8 +439,11 @@ public class MainActivity extends AppCompatActivity {
                     map.clear();
                     progress_bar.setVisibility(View.GONE);
 
+                     infoList = new ArrayList<>();
+
                     // This loop will go through all the results and add marker on each location.
                     if(response.body().getResults().size() >0){
+
                         for (int i = 0; i < response.body().getResults().size(); i++) {
                             Double lat = response.body().getResults().get(i).getGeometry().getLocation().getLat();
                             Double lng = response.body().getResults().get(i).getGeometry().getLocation().getLng();
@@ -402,6 +451,8 @@ public class MainActivity extends AppCompatActivity {
                             String vicinity = response.body().getResults().get(i).getVicinity();
                             Double rating = response.body().getResults().get(i).getRating();
                             String icon = response.body().getResults().get(i).getIcon();
+                            String reference = response.body().getResults().get(i).getReference();
+                            List<Photo> photos = response.body().getResults().get(i).getPhotos();
                             LatLng latLng = new LatLng(lat, lng);
 
                             MarkerOptions markerOptions = new MarkerOptions();
@@ -415,7 +466,9 @@ public class MainActivity extends AppCompatActivity {
                             info.setVicinity(vicinity);
                             info.setIcon(icon);
                             info.setRating(rating);
-
+                            info.setReference(reference);
+                            info.setPhotos(photos);
+                            infoList.add(info);
                             CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(MainActivity.this);
                             map.setInfoWindowAdapter(customInfoWindow);
 
@@ -426,12 +479,13 @@ public class MainActivity extends AppCompatActivity {
                             map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
                             map.animateCamera(CameraUpdateFactory.zoomTo(13));
 
-
                         }
-                    } else
-                    {
-                        Toast.makeText(MainActivity.this, "Oops..No nearby place found within given radius !!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        behavior.setState(STATE_COLLAPSED);
+                        Toast.makeText(MainActivity.this, "Status: " +response.body().getStatus()+"No result found !!", Toast.LENGTH_SHORT).show();
                     }
+
+                    setBottomSheetAdapter(getApplicationContext() , infoList);
 
                 } catch (Exception e) {
                     Log.d("onResponse", "There is an error");
@@ -448,34 +502,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+
+        if(behavior != null &&  behavior.getState() == STATE_EXPANDED)
+            behavior.setState(STATE_COLLAPSED);
+        else
+            super.onBackPressed();
+
+    }
+
+    private void setBottomSheetAdapter(Context ctx, List<Result> infoList) {
+        mAdapter = new ItemAdapter(ctx , this, infoList);
+        recyclerView.setAdapter(mAdapter);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
         return super.onCreateOptionsMenu(menu);
-    }
-    MenuItem menuItemList;
-    MenuItem menuItemMap;
-
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-         menuItemList = menu.findItem(R.id.action_list);
-         menuItemMap = menu.findItem(R.id.action_map);
-
-         menuItemList.setVisible(false);
-        menuItemMap.setVisible(false);
-//         if (isMapVisible){
-//             menuItemList.setVisible(true);
-//             menuItemMap.setVisible(false);
-//
-//         }
-//          else{
-//             menuItemList.setVisible(false);
-//             menuItemMap.setVisible(true);
-//
-//         }
-
-        return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -485,15 +530,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_radius:
                 showAlert(this);
                 return true;
-            case R.id.action_map:
-//                isMapVisible = true;
-//                startActivity(new Intent(this , MapFragment.class));
-                return true;
-            case R.id.action_list:
-                //isMapVisible = false;
-                //            startActivity(new Intent(this , ListActivity.class));
-                return true;
-            default:
+             default:
                 return super.onOptionsItemSelected(item);
         }
 
@@ -553,6 +590,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onItemClick(String item) {
+        behavior.setState(STATE_COLLAPSED);
+    }
+
 
     public class CustomInfoWindowGoogleMap implements GoogleMap.InfoWindowAdapter {
 
@@ -581,7 +623,7 @@ public class MainActivity extends AppCompatActivity {
             details_tv.setText(marker.getSnippet());
 
             Result infoWindowData = (Result) marker.getTag();
-
+//
             Glide.with(getApplicationContext())
                     .load(infoWindowData.getIcon())
                     .asBitmap()
