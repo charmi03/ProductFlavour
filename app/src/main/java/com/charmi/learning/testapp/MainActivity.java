@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Looper;
 import android.provider.Settings;
@@ -81,12 +82,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static android.support.design.widget.BottomSheetBehavior.STATE_COLLAPSED;
 import static android.support.design.widget.BottomSheetBehavior.STATE_EXPANDED;
 
-public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemListener{
+public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemListener {
 
     BottomSheetBehavior behavior;
     RecyclerView recyclerView;
     private ItemAdapter mAdapter;
-    private  TextView tvResult;
+    private TextView tvResult;
     private ArrayList<Result> infoList;
     public int PROXIMITY_RADIUS = 0;
 
@@ -159,16 +160,16 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
         tvResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(infoList.size() > 0)
+
+                if (infoList != null && infoList.size() > 0) {
                     behavior.setState(STATE_EXPANDED);
-                else{
+                } else {
                     behavior.setState(STATE_COLLAPSED);
                     Toast.makeText(MainActivity.this, "No result found !!", Toast.LENGTH_SHORT).show();
                 }
 
             }
         });
-
 
     }
 
@@ -212,13 +213,13 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
             LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
 
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17);
-            if (map != null){
+            if (map != null) {
                 map.setMyLocationEnabled(true);
                 map.animateCamera(cameraUpdate);
 
             }
 
-            if(getPreferencesRadius("RADIUS") > 0 )
+            if (getPreferencesRadius("RADIUS") > 0)
                 PROXIMITY_RADIUS = getPreferencesRadius("RADIUS");
             else
                 PROXIMITY_RADIUS = 1500;
@@ -417,94 +418,116 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
         }
     }
 
+    private boolean isNetworkConnected() {
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (cm != null) {
+            return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
+        }
+        return false;
+    }
+
     private void retrofit_call(String type, int radius) {
-        progress_bar.setVisibility(View.VISIBLE);
 
-        String url = "https://maps.googleapis.com/maps/";
+        if (!isNetworkConnected()) {
+            Toast.makeText(MainActivity.this, "No internet connection found !!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(url)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        if (mCurrentLocation != null) {
+            progress_bar.setVisibility(View.VISIBLE);
 
-        RetrofitMaps service = retrofit.create(RetrofitMaps.class);
+            String url = "https://maps.googleapis.com/maps/";
 
-        Call<Example> call = service.getNearbyPlaces(type, mCurrentLocation.getLatitude() + "," +
-                mCurrentLocation.getLongitude(), radius);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(url)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
 
-        call.enqueue(new Callback<Example>() {
-            @Override
-            public void onResponse(Call<Example> call, Response<Example> response) {
-                try {
-                    map.clear();
-                    progress_bar.setVisibility(View.GONE);
+            RetrofitMaps service = retrofit.create(RetrofitMaps.class);
 
-                     infoList = new ArrayList<>();
+            Call<Example> call = service.getNearbyPlaces(type, mCurrentLocation.getLatitude() + "," +
+                    mCurrentLocation.getLongitude(), radius);
 
-                    // This loop will go through all the results and add marker on each location.
-                    if(response.body().getResults().size() >0){
+            call.enqueue(new Callback<Example>() {
+                @Override
+                public void onResponse(Call<Example> call, Response<Example> response) {
+                    try {
+                        map.clear();
+                        progress_bar.setVisibility(View.GONE);
 
-                        for (int i = 0; i < response.body().getResults().size(); i++) {
-                            Double lat = response.body().getResults().get(i).getGeometry().getLocation().getLat();
-                            Double lng = response.body().getResults().get(i).getGeometry().getLocation().getLng();
-                            String placeName = response.body().getResults().get(i).getName();
-                            String vicinity = response.body().getResults().get(i).getVicinity();
-                            Double rating = response.body().getResults().get(i).getRating();
-                            String icon = response.body().getResults().get(i).getIcon();
-                            String reference = response.body().getResults().get(i).getReference();
-                            List<Photo> photos = response.body().getResults().get(i).getPhotos();
-                            LatLng latLng = new LatLng(lat, lng);
+                        infoList = new ArrayList<>();
 
-                            MarkerOptions markerOptions = new MarkerOptions();
-                            markerOptions.position(latLng)
-                                    .title(placeName)
-                                    .snippet(vicinity)
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+                        // This loop will go through all the results and add marker on each location.
+                        if (response.body().getResults().size() > 0) {
 
-                            Result info = new Result();
-                            info.setName(placeName);
-                            info.setVicinity(vicinity);
-                            info.setIcon(icon);
-                            info.setRating(rating);
-                            info.setReference(reference);
-                            info.setPhotos(photos);
-                            infoList.add(info);
-                            CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(MainActivity.this);
-                            map.setInfoWindowAdapter(customInfoWindow);
+                            for (int i = 0; i < response.body().getResults().size(); i++) {
+                                Double lat = response.body().getResults().get(i).getGeometry().getLocation().getLat();
+                                Double lng = response.body().getResults().get(i).getGeometry().getLocation().getLng();
+                                String placeName = response.body().getResults().get(i).getName();
+                                String vicinity = response.body().getResults().get(i).getVicinity();
+                                Double rating = response.body().getResults().get(i).getRating();
+                                String icon = response.body().getResults().get(i).getIcon();
+                                String reference = response.body().getResults().get(i).getReference();
+                                List<Photo> photos = response.body().getResults().get(i).getPhotos();
+                                LatLng latLng = new LatLng(lat, lng);
 
-                            Marker m = map.addMarker(markerOptions);
-                            m.setTag(info);
-                            m.showInfoWindow();
+                                MarkerOptions markerOptions = new MarkerOptions();
+                                markerOptions.position(latLng)
+                                        .title(placeName)
+                                        .snippet(vicinity)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
 
-                            map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                            map.animateCamera(CameraUpdateFactory.zoomTo(13));
+                                Result info = new Result();
+                                info.setName(placeName);
+                                info.setVicinity(vicinity);
+                                info.setIcon(icon);
+                                info.setRating(rating);
+                                info.setReference(reference);
+                                info.setPhotos(photos);
+                                infoList.add(info);
+                                CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(MainActivity.this);
+                                map.setInfoWindowAdapter(customInfoWindow);
 
+                                Marker m = map.addMarker(markerOptions);
+                                m.setTag(info);
+                                m.showInfoWindow();
+
+                                map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                                map.animateCamera(CameraUpdateFactory.zoomTo(13));
+
+                            }
+                        } else {
+                            behavior.setState(STATE_COLLAPSED);
+                            Toast.makeText(MainActivity.this, "Status: " + response.body().getStatus() + "No result found !!", Toast.LENGTH_SHORT).show();
                         }
-                    } else {
-                        behavior.setState(STATE_COLLAPSED);
-                        Toast.makeText(MainActivity.this, "Status: " +response.body().getStatus()+"No result found !!", Toast.LENGTH_SHORT).show();
+
+                        setBottomSheetAdapter(getApplicationContext(), infoList);
+
+                    } catch (Exception e) {
+                        Log.d("onResponse", "There is an error");
+                        e.printStackTrace();
                     }
-
-                    setBottomSheetAdapter(getApplicationContext() , infoList);
-
-                } catch (Exception e) {
-                    Log.d("onResponse", "There is an error");
-                    e.printStackTrace();
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Example> call, Throwable t) {
-                Log.d("onFailure", t.toString());
-            }
+                @Override
+                public void onFailure(Call<Example> call, Throwable t) {
+                    Log.d("onFailure", t.toString());
+                }
 
-        });
+            });
+        } else {
+            Toast.makeText(MainActivity.this, "Please wait..its taking longer to fetch location", Toast.LENGTH_SHORT).show();
+            startLocationUpdates();
+        }
+
     }
 
     @Override
     public void onBackPressed() {
 
-        if(behavior != null &&  behavior.getState() == STATE_EXPANDED)
+        if (behavior != null && behavior.getState() == STATE_EXPANDED)
             behavior.setState(STATE_COLLAPSED);
         else
             super.onBackPressed();
@@ -512,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
     }
 
     private void setBottomSheetAdapter(Context ctx, List<Result> infoList) {
-        mAdapter = new ItemAdapter(ctx , this, infoList);
+        mAdapter = new ItemAdapter(ctx, this, infoList);
         recyclerView.setAdapter(mAdapter);
     }
 
@@ -530,18 +553,20 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
             case R.id.action_radius:
                 showAlert(this);
                 return true;
-             default:
+            default:
                 return super.onOptionsItemSelected(item);
         }
 
     }
+
     private void SavePreferencesRadius(String key, int value) {
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(key, value);
         editor.commit();
     }
-    private int getPreferencesRadius(String key){
+
+    private int getPreferencesRadius(String key) {
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
         int savedPref = sharedPreferences.getInt(key, 0);
 
@@ -555,9 +580,9 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
         alertDialogBuilder.setView(promptsView);
 
-        final EditText userInput =  promptsView.findViewById(R.id.et_radius);
+        final EditText userInput = promptsView.findViewById(R.id.et_radius);
 
-        if(getPreferencesRadius("RADIUS") > 0)
+        if (getPreferencesRadius("RADIUS") > 0)
             userInput.setText(String.valueOf(getPreferencesRadius("RADIUS")));
 
         // set dialog message
@@ -565,10 +590,10 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
                 .setCancelable(false)
                 .setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,int id) {
+                            public void onClick(DialogInterface dialog, int id) {
 
-                                if(!TextUtils.isEmpty(userInput.getText())) {
-                                    SavePreferencesRadius("RADIUS",Integer.parseInt(userInput.getText().toString()));
+                                if (!TextUtils.isEmpty(userInput.getText())) {
+                                    SavePreferencesRadius("RADIUS", Integer.parseInt(userInput.getText().toString()));
                                     PROXIMITY_RADIUS = Integer.parseInt(userInput.getText().toString());
                                     retrofit_call(getResources().getString(R.string.place_name), PROXIMITY_RADIUS);
                                 }
@@ -645,7 +670,7 @@ public class MainActivity extends AppCompatActivity implements ItemAdapter.ItemL
 
 
             if (infoWindowData.getRating() != null)
-                rating_tv.setText("Rating: "+ infoWindowData.getRating().toString());
+                rating_tv.setText("Rating: " + infoWindowData.getRating().toString());
 
             return view;
         }

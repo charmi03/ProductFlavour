@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.charmi.learning.testapp"
-        manifestPlaceholders = [appTheme: "@style/AppTheme_green", "GOOGLE_PLACE_API_KEY": MyGooglePlaceApiKey]
+        manifestPlaceholders = ["GOOGLE_PLACE_API_KEY": MyGooglePlaceApiKey]
         minSdkVersion 22
         targetSdkVersion 28
         versionCode 2
@@ -26,31 +26,16 @@ android {
         flavorDimensions "deafult"
         HotelApp {
             applicationId "com.android.app.hotel"
-            resValue "string", "app_name", "Hotel App"
-            resValue "string", "place_name", "restaurant"
-            manifestPlaceholders = [
-                    appTheme: "@style/AppTheme_blue"
-            ]
-
         }
         BankApp {
             applicationId "com.android.app.bank"
-            resValue "string", "app_name", "Bank App"
-            resValue "string", "place_name", "bank"
-
         }
         PharmacyApp {
             applicationId "com.android.app.pharmacy"
-            resValue "string", "app_name", "Pharmacy App"
-            resValue "string", "place_name", "pharmacy"
         }
         PoliceApp {
             applicationId "com.android.app.police"
-            resValue "string", "app_name", "Police App"
-            resValue "string", "place_name", "police"
-            manifestPlaceholders = [
-                    appTheme: "@style/AppTheme_brown"
-            ]
+
         }
     }
 }
